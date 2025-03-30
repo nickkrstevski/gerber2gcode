@@ -1,0 +1,6 @@
+./gerbers/*
+gerbers
+./outputs/*
+outputs
+.venv/*
+.venv
