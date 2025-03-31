@@ -94,13 +94,14 @@ class GCode:
         self._add_line(f"G1 X{x} Y{y} F{feed}")
 
     def add_array(self, array, feed = 800):
-        for idx, toolpath in enumerate(array): #individual contour
-            # Move with tool off
-            self.tool_on(False)
-            self.set_location(x=toolpath[0][0],y=toolpath[0][1])
-            self.tool_on(True)
-            for step in toolpath:
-                self.set_location(x=step[0],y=step[1])
+        if array:
+            for idx, toolpath in enumerate(array): #individual contour
+                # Move with tool off
+                self.tool_on(False)
+                self.set_location(x=toolpath[0][0],y=toolpath[0][1])
+                self.tool_on(True)
+                for step in toolpath:
+                    self.set_location(x=step[0],y=step[1])
 
     def tool_on(self,tool_on: bool):
         self._add_line(f"{'M3 S1' if tool_on else 'M5'}")
@@ -118,7 +119,7 @@ class GCode:
         """
         print("\n".join(self.commands))
 
-    def animate_gcode(self, output_file=None, dpi=100, interval=1, figsize=(5, 4),polygons = [Polygon]):
+    def animate_gcode(self, output_file=None, dpi=100, interval=1, figsize=(5, 4),polygons:List[Polygon]=None):
         """
         Animates G-code file showing the tool path.
         
@@ -281,7 +282,72 @@ class GCode:
 
         return anim
 
+    def plot_gcode_and_polygons(self, shapely_polygons=None):
+        """
+        Plots the toolpath from a list of G-code commands and overlays Shapely polygons,
+        ensuring equal scaling on both axes, with different colors for tool on/off states.
 
+        Parameters:
+            gcode_commands (list of str): List of G-code commands as strings.
+            shapely_polygons (list of shapely.geometry.Polygon or shapely.geometry.MultiPolygon, optional):
+                List of Shapely polygon objects to overlay on the plot.
+                Defaults to None.
+        """
+        x, y, colors = [], [], []
+        tool_on = False
+        current_x, current_y = 0, 0
+
+        # Define G-code command prefixes for movement and tool control
+        movement_commands = ('G0', 'G1')
+        tool_on_commands = ('M3', 'M4')
+        tool_off_commands = ('M5',)
+
+        for command in self.commands:
+            parts = command.strip().split()
+            if not parts:
+                continue
+
+            cmd = parts[0]
+            params = {p[0]: float(p[1:]) for p in parts[1:]}
+
+            # Update tool state
+            if cmd in tool_on_commands:
+                tool_on = True
+            elif cmd in tool_off_commands:
+                tool_on = False
+
+            # Process movement commands
+            if cmd in movement_commands:
+                new_x = params.get('X', current_x)
+                new_y = params.get('Y', current_y)
+                if new_x != current_x or new_y != current_y:
+                    x.append([current_x, new_x])
+                    y.append([current_y, new_y])
+                    colors.append('red' if tool_on else 'blue')
+                current_x, current_y = new_x, new_y
+
+        # Plotting
+        fig, ax = plt.subplots()
+        for i in range(len(x)):
+            ax.plot(x[i], y[i], color=colors[i])
+
+        # Overlay Shapely polygons if provided
+        if shapely_polygons:
+            for polygon in shapely_polygons:
+                if isinstance(polygon, Polygon):
+                    x, y = polygon.exterior.xy
+                    ax.fill(x, y, alpha=0.5, color='gray')
+
+        # Set equal scaling for both axes
+        ax.set_aspect('equal', adjustable='box')
+
+        # Set labels and title
+        ax.set_xlabel('X Position')
+        ax.set_ylabel('Y Position')
+        ax.set_title('G-code Toolpath and Shapely Polygons')
+
+        # Display the plot
+        plt.show()
 
 
 if __name__ == "__main__":

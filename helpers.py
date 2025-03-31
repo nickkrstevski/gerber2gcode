@@ -44,7 +44,18 @@ def recur_is_bounded(command: ApertureDrawCommand2, bounding_info: GerberFileInf
         print(f"Command {command} not printed")
         return False
 
+def sort_polygons_by_min_x(polygons):
+    """
+    Sorts a list of Shapely polygons by their minimum x value.
 
+    Parameters:
+        polygons (list of shapely.geometry.Polygon): List of Shapely polygon objects.
+
+    Returns:
+        list: Sorted list of Shapely polygons based on their minimum x value.
+    """
+    # Sort the polygons by their minimum x value of the exterior coordinates
+    return sorted(polygons, key=lambda poly: min(poly.exterior.xy[0]))
 
 
 # animate_gcode("./drawing.gcode","./animation.gif")

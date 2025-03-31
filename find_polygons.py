@@ -1,7 +1,8 @@
 from pocketing import pocketing
 import matplotlib.pyplot as plt
 from shapely.geometry import Point, Polygon
-from helpers import add_polygon_to_plot, recur_is_bounded
+from helpers import add_polygon_to_plot, recur_is_bounded, sort_polygons_by_min_x
+from gcode import GCode
 
 from pygerber.gerberx3.parser2.commands2.arc2 import CCArc2
 from pygerber.gerberx3.parser2.commands2.line2 import Line2
@@ -15,8 +16,6 @@ import matplotlib.patches as patches
 from shapely.geometry import Point, Polygon
 import numpy as np
 
-fig, ax = plt.subplots(figsize=(8, 8))
-plt.gca().set_aspect('equal', adjustable='box')
 TOOLHEAD = 1
 
 outline_gerber = GerberFile.from_file("./gerbers/1930238-00-D_02-1.GM1",FileTypeEnum.INFER_FROM_ATTRIBUTES)
@@ -40,16 +39,25 @@ for command in parsed_outline._command_buffer:
             poly_originals.append(poly_original)
             polys.append(poly)
 
+sorted_polys = sort_polygons_by_min_x(polys)
 
 # generate tool paths
 all_toolpaths=[]
 all_travelpaths=[]
-for poly in polys:
+for poly in sorted_polys:
     toolpaths = pocketing.contour.contour_parallel(poly, TOOLHEAD)
     all_toolpaths.append(toolpaths)
 
-for poly in poly_originals:    
-    add_polygon_to_plot(poly, ax, color='blue', alpha=0.3)
+# for poly in poly_originals:    
+    # add_polygon_to_plot(poly, ax, color='blue', alpha=0.3)
+
+gcode = GCode("./outputs/gerber.gcode")
+for toolpaths in all_toolpaths:
+    gcode.add_array(toolpaths)
+
+gcode.save()
+gcode.plot_gcode_and_polygons(poly_originals)
+# gcode.animate_gcode("./outputs/gerber.mp4",polygons=poly_originals)
 
 # # visualize by plotting
 # for toolpaths in all_toolpaths:
