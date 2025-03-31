@@ -39,23 +39,23 @@ for command in parsed_outline._command_buffer:
             poly = Polygon(coordinates).buffer(-TOOLHEAD/2,resolution=16, join_style=1)
             poly_originals.append(poly_original)
             polys.append(poly)
+
+
 # generate tool paths
 all_toolpaths=[]
 all_travelpaths=[]
 for poly in polys:
-    toolpaths, travelpaths = pocketing.contour.contour_parallel(poly, TOOLHEAD)
+    toolpaths = pocketing.contour.contour_parallel(poly, TOOLHEAD)
     all_toolpaths.append(toolpaths)
-    all_travelpaths.append(travelpaths)
 
 for poly in poly_originals:    
     add_polygon_to_plot(poly, ax, color='blue', alpha=0.3)
 
-# visualize by plotting
-for toolpaths in all_toolpaths:
-    for toolpath in toolpaths:
-        plt.plot(*toolpath.T, color='black')
-for toolpaths in all_travelpaths:
-    for toolpath in toolpaths:
-        plt.plot(*toolpath.T, color='red')
-
-plt.show()
+# # visualize by plotting
+# for toolpaths in all_toolpaths:
+#     for toolpath in toolpaths:
+#         plt.plot(*toolpath.T, color='black')
+# # for toolpaths in all_travelpaths:
+# #     for toolpath in toolpaths:
+# #         plt.plot(*toolpath.T, color='red')
+# plt.show()
