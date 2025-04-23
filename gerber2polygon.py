@@ -19,7 +19,7 @@ outline_info = outline_gerber.parse().get_info()
 
 parsed_outline = mask_gerber.parse()
 
-TOOLHEAD = 1
+TOOLHEAD = 2
 points = []
 
 custom_command_buffer_solid: CommandBuffer2 = CommandBuffer2()
@@ -102,23 +102,24 @@ for poly in polygons:
 
 gcode.save()
 gcode.plot_gcode_and_polygons(polygons)
-# # Step 4: Plot results
-# plt.figure(figsize=(8, 8))
-# # Generate distinct colors for each label
-# unique_labels = set(labels)
-# colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
-# # Fill the polygons
-# for polygon in polygons:
-#     x, y = polygon.exterior.xy
-#     plt.fill(x, y, color='blue', alpha=0.5)  # alpha for transparency
-# # Scatter plot with colors based on groups
-# for label, point in zip(labels, points):
-#     color = colors[label % len(colors)] if label != -1 else "black"  # Black for noise
-#     plt.scatter(point[0], point[1], color=color, edgecolors="k", s=50)
-# # Ensure equal scaling
-# plt.axis("equal")
-# # Remove duplicate legend labels
-# handles, labels = plt.gca().get_legend_handles_labels()
-# by_label = dict(zip(labels, handles))
-# plt.legend(by_label.values(), by_label.keys(), loc="upper left")
-# plt.show()
+
+# Step 4: Plot results
+plt.figure(figsize=(8, 8))
+# Generate distinct colors for each label
+unique_labels = set(labels)
+colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
+# Fill the polygons
+for polygon in polygons:
+    x, y = polygon.exterior.xy
+    plt.fill(x, y, color='blue', alpha=0.5)  # alpha for transparency
+# Scatter plot with colors based on groups
+for label, point in zip(labels, points):
+    color = colors[label % len(colors)] if label != -1 else "black"  # Black for noise
+    plt.scatter(point[0], point[1], color=color, edgecolors="k", s=50)
+# Ensure equal scaling
+plt.axis("equal")
+# Remove duplicate legend labels
+handles, labels = plt.gca().get_legend_handles_labels()
+by_label = dict(zip(labels, handles))
+plt.legend(by_label.values(), by_label.keys(), loc="upper left")
+plt.show()
