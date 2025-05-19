@@ -3,7 +3,7 @@ import math
 # Circle parameters
 center_x = 200
 center_y = 200
-radius = 150
+radius = 100
 segments = 500  # Number of linear segments
 
 # Open the file in write mode

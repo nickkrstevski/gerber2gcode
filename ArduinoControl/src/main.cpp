@@ -4,6 +4,7 @@ int relay_1 = 4;
 int relay_2 = 7;
 int relay_3 = 8;
 int relay_4 = 12;
+String serialInput;
 
 void setup() {
   // put your setup code here, to run once:
@@ -16,23 +17,31 @@ void setup() {
 
 }
 
-void loop() {
-
-  digitalWrite(relay_1, HIGH);
-  digitalWrite(relay_2, HIGH);
+void on() {
   digitalWrite(relay_3, HIGH);
   digitalWrite(relay_4, HIGH);
-
-  Serial.println("All relays ON");
-
-  delay(1000);
-
-  digitalWrite(relay_1, LOW);
-  digitalWrite(relay_2, LOW);
-  digitalWrite(relay_3, LOW);
-  digitalWrite(relay_4, LOW);
-
-  Serial.println("All relays OFF");
-
-  delay(1000);
 }
+
+void off() {
+  digitalWrite(relay_4, LOW);
+  delay(500);
+  digitalWrite(relay_3, LOW);
+}
+
+void loop() {
+
+  while (Serial.available() > 0) {
+    serialInput = Serial.readStringUntil('\n'); // Read input until newline
+    //if the incoming character is a newline, process the string
+    Serial.println(serialInput);
+    if(serialInput == "ON"){
+      Serial.println("TOOL ON");
+      on();
+    }
+    else if (serialInput == "OFF"){
+      Serial.println("TOOL OFF");
+      off();
+    }
+    serialInput = ""; //clear the input
+    }
+  }
