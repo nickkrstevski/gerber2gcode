@@ -54,7 +54,7 @@ class Axis():
         self.velocity = 0
         self.angle_target = 0
         self.ser = self._initialize_serial_connection(sn)
-        self._listen_for_message("Motor ready.")
+        self._listen_for_message(">")
         self.init_motion()
         self.velocity_limit = 20
     
@@ -98,7 +98,7 @@ class Axis():
             self._reconnect_serial()
 
     def init_motion(self):
-        init_commands = ['MLV20\n','MC2\n', 'MAP20\n','MAD1.3\n','M0\n']
+        init_commands = ['MLV20\n','MC2\n', 'MAP50\n','MAD1.1\n','M0\n']
         for cmd in init_commands:
             self.send_command(cmd)
 
@@ -193,26 +193,45 @@ class Gantry():
         self.x_axis = x_axis
         self.y_axis = y_axis
         self.tool = tool
+        self.x = None
+        self.y = None
 
     def set_xy(self, x_pos_mm, y_pos_mm):
         '''
         Set x and y position, give the motor enough time to get there based on telemetry update
         '''
-        # self.x_axis.update_telemetry()
-        # self.y_axis.update_telemetry()
-        radians_to_go = self.x_axis.mm2rad(x_pos_mm) - self.x_axis.angle_target
-        est_time_1 = radians_to_go/self.x_axis.velocity_limit
-        radians_to_go = self.y_axis.mm2rad(y_pos_mm) - self.y_axis.angle_target
-        # print(radians_to_go)
-        est_time_2 = radians_to_go/self.y_axis.velocity_limit
-        delay = max(abs(est_time_1),abs(est_time_2))
+        delay = 1
+        fudge = 1
+        if self.x and self.y:
+            radians_to_go = self.x_axis.mm2rad(x_pos_mm - self.x)
+            est_time_1 = fudge*radians_to_go/(self.x_axis.velocity_limit-10)
+            print(f"x-distance: {x_pos_mm - self.x}")
+            print(f"x-rads: {self.x_axis.mm2rad(x_pos_mm - self.x)}")
+            print(f"x-est: {est_time_1}")
+            radians_to_go = self.y_axis.mm2rad(y_pos_mm - self.y)
+            est_time_2 = fudge*radians_to_go/(self.y_axis.velocity_limit-10)
+            print(f"y-distance: {y_pos_mm - self.y}")
+            print(f"y-rads: {self.y_axis.mm2rad(y_pos_mm - self.y)}")
+            print(f"y-est: {est_time_2}")
+            delay = max(abs(est_time_1),abs(est_time_2))
+            print(f"DELAY{delay}")
+
+        self.x = x_pos_mm
+        self.y = y_pos_mm
         self.x_axis.set_target_pos_mm(x_pos_mm)
         self.y_axis.set_target_pos_mm(y_pos_mm)
-        # print(delay)
-        time.sleep(0.005)
+        time.sleep(delay)
+        # time.sleep(0.005)
         # time.sleep(max(abs(est_time_1),abs(est_time_2)))
 
+    def purge(self,time_s = 1):
+        self.set_xy(0,500)
+        self.tool.tool_on()
+        time.sleep(time_s)
+        self.tool.tool_off()
+
     def run_gcode(self, file_path):
+        self.purge(2)
         with open(file_path, 'r') as file:
             for line in file:
                 parts = line.split()
@@ -232,6 +251,7 @@ class Gantry():
 
 def main():
     # Replace 'COM1' and 'COM2' with your actual port names
+    global tool_head
     tool_head = Tool(sn="3423931353535120B1E0")
     long_motor_sn = '209D3077484E'
     long_motor = Axis(sn=long_motor_sn)
@@ -244,18 +264,30 @@ def main():
     time.sleep(1)
     short_motor.set_velocity_limit(50)
     long_motor.set_velocity_limit(50)
-    long_motor.set_pid(p=20,i=0,d=1.4)
-    short_motor.set_pid(p=20,i=0,d=1.4)
+    long_motor.set_pid(p=50,i=0,d=1.3)
+    short_motor.set_pid(p=50,i=0,d=1.1)
     # time.sleep(1)
     # long_motor.set_target_pos_mm(100)
     # short_motor.set_target_pos_mm(100)
 
     #######################################
-    while 1:
-        gantry.run_gcode("./circle.gcode")
+    try:
+        while 1:
+            if input('spray?').lower() == "y":
+                gantry.run_gcode("./output.gcode")
+                # gantry.run_gcode("./circle.gcode")
+                # gantry.run_gcode("./infill.gcode")
+            if input('again?').lower() == "n":
+                kill(gantry)
+    except KeyboardInterrupt:
+        print("\nCtrl+C detected. Exiting gracefully.")
+        kill(gantry)
 
-
-    
+def kill(gantry: Gantry):
+    gantry.tool.tool_off()
+    print("TURNED STUFF OFF")
+    exit()
+        
 
 if __name__ == "__main__":
     main()
