@@ -274,9 +274,9 @@ def main():
     try:
         while 1:
             if input('spray?').lower() == "y":
-                gantry.run_gcode("./output.gcode")
+                # gantry.run_gcode("./output.gcode")
                 # gantry.run_gcode("./circle.gcode")
-                # gantry.run_gcode("./infill.gcode")
+                gantry.run_gcode("./infill.gcode")
             if input('again?').lower() == "n":
                 kill(gantry)
     except KeyboardInterrupt:

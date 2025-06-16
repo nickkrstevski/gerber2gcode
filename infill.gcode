@@ -1,6 +1,7 @@
 G21         ; Set units to millimeters
 G90         ; Use absolute positioning
 G1 X50.0000 Y50.0000 
+M3
 G1 X210.0000 Y50.0000
 G1 X210.0000 Y54.0000
 G1 X50.0000 Y54.0000
