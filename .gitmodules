@@ -1,0 +1,3 @@
+[submodule "pocketing"]
+	path = pocketing
+	url = git@github.com:nickkrstevski/pocketing.git
